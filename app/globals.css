@@ -1,26 +1,24 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* PRD 3.0 공통 — 색 역할 */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: #f8dfd9; /* 바탕 살몬핑크 */
+  --color-card: #fffbfa; /* 카드 */
+  --color-ink: #3b2420; /* 글자 (흐린 글자는 text-ink/65) */
+  --color-line: #efc7bc; /* 선 */
+  --color-accent: #e2722c; /* 강조 오렌지 */
+  --color-ok-ink: #4f6e3c; /* 됨 — 확정 · 출석 */
+  --color-ok-bg: #e6eddc;
+  --color-no-ink: #8c3a4f; /* 안 됨 — 거절 · 취소됨 */
+  --color-no-bg: #f1d9df;
+  --color-warn-ink: #8f5714; /* 주의 — 대기 */
+  --color-warn-bg: #f8e6c8;
+  --font-sans: var(--font-noto), "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
 }
