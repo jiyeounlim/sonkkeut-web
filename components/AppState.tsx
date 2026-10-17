@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { 수강생, 클래스, 신청, 신청상태 } from "@/lib/샘플데이터";
+import type { 수강생, 클래스, 신청, 신청상태, 공지 } from "@/lib/샘플데이터";
 import { 주월요일 } from "@/lib/날짜";
 import { 지금 } from "@/lib/지금";
 import { supabase } from "@/lib/supabase";
@@ -22,8 +22,10 @@ type 값 = {
   수강생목록: 수강생[];
   클래스목록: 클래스[];
   신청목록: 신청[];
+  공지목록: 공지[]; // 새 것이 위 (posted_at 내림차순)
   상태바꾸기: (id: string, 상태: 신청상태) => void;
   출석바꾸기: (id: string) => void; // 켜져 있으면 끄고, 꺼져 있으면 켠다
+  공지올리기: (제목: string, 본문: string) => Promise<void>;
   다시시도: () => void;
 };
 
@@ -40,6 +42,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [수강생목록, set수강생목록] = useState<수강생[]>([]);
   const [클래스목록, set클래스목록] = useState<클래스[]>([]);
   const [신청목록, set신청목록] = useState<신청[]>([]);
+  const [공지목록, set공지목록] = useState<공지[]>([]);
   const [새로고침키, set새로고침키] = useState(0);
 
   useEffect(() => {
@@ -55,14 +58,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     let 취소됨 = false;
     (async () => {
       set에러(null);
-      const [학생결과, 클래스결과, 신청결과] = await Promise.all([
+      const [학생결과, 클래스결과, 신청결과, 공지결과] = await Promise.all([
         supabase.from("students").select("id, name, phone"),
         supabase.from("classes").select("id, starts_at, name, capacity"),
         supabase.from("applications").select("id, class_id, student_id, status, attended, applied_at"),
+        supabase.from("notices").select("id, title, body, posted_at").order("posted_at", { ascending: false }),
       ]);
       if (취소됨) return;
 
-      if (학생결과.error || 클래스결과.error || 신청결과.error) {
+      if (학생결과.error || 클래스결과.error || 신청결과.error || 공지결과.error) {
         set에러("창고에서 못 불러왔습니다");
         return;
       }
@@ -90,6 +94,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             신청한때: { 날, 시: 신청때.getHours(), 분: 신청때.getMinutes() },
           };
         }),
+      );
+      set공지목록(
+        (공지결과.data ?? []).map((n) => ({
+          id: n.id,
+          제목: n.title,
+          본문: n.body,
+          올린때: new Date(n.posted_at),
+        })),
       );
     })();
 
@@ -127,11 +139,37 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
+  // 알림판에서 [올리기] — 창고엔 title·body 로 나뉘어 저장된다 (제목 = 쓰는 칸 첫 줄)
+  const 공지올리기 = useCallback(async (제목: string, 본문: string) => {
+    const id = `n-${Date.now()}`;
+    const 올린때 = new Date();
+    set공지목록((목록) => [{ id, 제목, 본문, 올린때 }, ...목록]);
+    const { error } = await supabase
+      .from("notices")
+      .insert({ id, title: 제목, body: 본문, posted_at: 올린때.toISOString() });
+    if (error) {
+      set공지목록((목록) => 목록.filter((n) => n.id !== id));
+      set에러("저장하지 못했습니다");
+    }
+  }, []);
+
   const 다시시도 = useCallback(() => set새로고침키((n) => n + 1), []);
 
   return (
     <상태그릇.Provider
-      value={{ 현재, 쿼리, 에러, 수강생목록, 클래스목록, 신청목록, 상태바꾸기, 출석바꾸기, 다시시도 }}
+      value={{
+        현재,
+        쿼리,
+        에러,
+        수강생목록,
+        클래스목록,
+        신청목록,
+        공지목록,
+        상태바꾸기,
+        출석바꾸기,
+        공지올리기,
+        다시시도,
+      }}
     >
       {children}
     </상태그릇.Provider>

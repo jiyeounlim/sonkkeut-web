@@ -40,6 +40,11 @@ export function 기록날짜(날짜: Date): string {
   return `${날짜.getMonth() + 1}/${날짜.getDate()} (${요일글자[날짜.getDay()]})`;
 }
 
+// 예: 9/10 — 알림판 공지 목록 날짜 (요일 없이)
+export function 월일(날짜: Date): string {
+  return `${날짜.getMonth() + 1}/${날짜.getDate()}`;
+}
+
 // 예: 18:00
 export function 시각글자(시각: number): string {
   return `${String(시각).padStart(2, "0")}:00`;

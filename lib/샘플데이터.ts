@@ -14,6 +14,8 @@ export type 클래스 = {
   정원: number;
 };
 
+export type 공지 = { id: string; 제목: string; 본문: string; 올린때: Date };
+
 export type 신청한때 = { 날: number; 시: number; 분: number };
 
 export type 신청 = {
