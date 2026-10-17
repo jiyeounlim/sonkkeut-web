@@ -1,4 +1,5 @@
-// 아직 안 만든 화면 — 제목만 있는 빈 화면 (PRD 8장)
+import WeekScreen from "@/components/WeekScreen";
+
 export default function WeekPage() {
-  return <h1 className="text-xl font-bold">주간</h1>;
+  return <WeekScreen />;
 }
