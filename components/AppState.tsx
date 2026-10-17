@@ -26,7 +26,10 @@ type 값 = {
   상태바꾸기: (id: string, 상태: 신청상태) => void;
   출석바꾸기: (id: string) => void; // 켜져 있으면 끄고, 꺼져 있으면 켠다
   공지올리기: (제목: string, 본문: string) => Promise<void>;
+  클래스만들기: (날짜: string, 시각: number, 이름: string, 정원: number) => Promise<void>;
   다시시도: () => void;
+  전역알림: string | null; // 메뉴(클래스 만들기)처럼 화면에 안 묶인 알림 — 메뉴줄 아래 한 줄로 뜬다
+  전역알림띄우기: (글: string) => void;
 };
 
 const 상태그릇 = createContext<값 | null>(null);
@@ -44,6 +47,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [신청목록, set신청목록] = useState<신청[]>([]);
   const [공지목록, set공지목록] = useState<공지[]>([]);
   const [새로고침키, set새로고침키] = useState(0);
+  const [전역알림, set전역알림] = useState<string | null>(null);
 
   useEffect(() => {
     // 서버에서 그린 것과 어긋나지 않게, 브라우저에 온 뒤에 시계를 읽는다
@@ -153,7 +157,37 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // 메뉴 「클래스 만들기」 — 창(3-10). 날짜는 "YYYY-MM-DD", 시각은 정시(0~23)만 받는다.
+  // 시간대를 명시해야 한다 — 서버가 UTC라 그냥 합치면 저녁 클래스가 다음 날 새벽으로 저장된다 (10장 겪은 것).
+  const 클래스만들기 = useCallback(
+    async (날짜: string, 시각: number, 이름: string, 정원: number) => {
+      const id = `c-${Date.now()}`;
+      const 시 = String(시각).padStart(2, "0");
+      const starts_at = `${날짜}T${시}:00:00+09:00`;
+
+      const 기준 = 현재 ?? 지금();
+      const 월요일 = 주월요일(기준);
+      const 시작날짜 = 날짜만(new Date(`${날짜}T00:00:00+09:00`));
+      const 날 = Math.round((시작날짜.getTime() - 월요일.getTime()) / 86400000);
+
+      set클래스목록((목록) => [...목록, { id, 날, 시각, 이름, 정원 }]);
+      const { error } = await supabase
+        .from("classes")
+        .insert({ id, starts_at, name: 이름, capacity: 정원 });
+      if (error) {
+        set클래스목록((목록) => 목록.filter((c) => c.id !== id));
+        set에러("저장하지 못했습니다");
+      }
+    },
+    [현재],
+  );
+
   const 다시시도 = useCallback(() => set새로고침키((n) => n + 1), []);
+
+  const 전역알림띄우기 = useCallback((글: string) => {
+    set전역알림(글);
+    setTimeout(() => set전역알림(null), 5000);
+  }, []);
 
   return (
     <상태그릇.Provider
@@ -168,7 +202,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         상태바꾸기,
         출석바꾸기,
         공지올리기,
+        클래스만들기,
         다시시도,
+        전역알림,
+        전역알림띄우기,
       }}
     >
       {children}

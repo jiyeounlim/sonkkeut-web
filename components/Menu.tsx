@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useAppState } from "./AppState";
+import ClassCreateModal from "./ClassCreateModal";
 
 const 메뉴 = [
   { 이름: "오늘", 주소: "/today" },
@@ -19,11 +21,12 @@ function 지금화면인가(주소: string, 경로: string) {
 
 export default function Menu() {
   const 경로 = usePathname();
-  const { 쿼리 } = useAppState();
+  const { 쿼리, 전역알림 } = useAppState();
+  const [만들기창열림, set만들기창열림] = useState(false);
 
   return (
     <nav aria-label="메뉴" className="py-4">
-      <ul className="flex gap-2">
+      <ul className="flex flex-wrap items-center gap-2">
         {메뉴.map(({ 이름, 주소 }) => {
           const 지금 = 지금화면인가(주소, 경로);
           return (
@@ -42,7 +45,27 @@ export default function Menu() {
             </li>
           );
         })}
+        <li>
+          <button
+            type="button"
+            onClick={() => set만들기창열림(true)}
+            className="flex h-10 items-center rounded-full border border-line px-4 text-base font-medium text-ink hover:bg-line"
+          >
+            클래스 만들기
+          </button>
+        </li>
       </ul>
+
+      {전역알림 && (
+        <p
+          role="status"
+          className="mt-3 flex h-11 items-center rounded-xl bg-ok-bg px-4 text-base font-bold text-ok-ink"
+        >
+          {전역알림}
+        </p>
+      )}
+
+      {만들기창열림 && <ClassCreateModal onClose={() => set만들기창열림(false)} />}
     </nav>
   );
 }
